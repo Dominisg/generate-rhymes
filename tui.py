@@ -21,38 +21,41 @@ class RhymesView(Frame):
 
         # Create the form for displaying the list of contacts.
         self.dicts = dicts
-        layout = Layout([100], fill_frame=True)
+        self.llscreen = screen
+        layout = Layout([100])
         self.add_layout(layout)
         layout.add_widget(Text("Find rhyme to:", "search"))
         layout.add_widget(RadioButtons([('polish','pl'), ('english', 'en')], label="Language:", name='language'))
         layout.add_widget(RadioButtons([('1', 1),('2', 2),('3', 3)], label="Rhyme level:", name='level'))
-        
+        layout.add_widget(RadioButtons([('accurate', True), ('inaccurate', False)], label="Accuracy:", name='accurate'))
         layout.add_widget(Divider())
-        layout.add_widget(TextBox(
-            Widget.FILL_FRAME, "", name="result", as_string=True, line_wrap=True, readonly=True))
-        layout2 = Layout([1, 1, 1, 1])
+        
+        layout2 = Layout([1], fill_frame=True)
         self.add_layout(layout2)
-        layout2.add_widget(Button("Search", self._ok), 0)
-        layout2.add_widget(Button("Quit", self._quit), 3)
+        layout2.add_widget(TextBox(
+            Widget.FILL_FRAME, None, name="result", as_string=True, line_wrap=True, readonly=True))
+        layout3 = Layout([1, 1, 1, 1])
+        self.add_layout(layout3)
+        layout3.add_widget(Button("Search", self._ok), 0)
+        layout3.add_widget(Button("Quit", self._quit), 3)
         self.fix()
 
     def reset(self):
         # Do standard reset to clear out form, then populate with new data.
         super(RhymesView, self).reset()
-        self.data = {"search": "", "result": "", 'language': 'pl', 'level': '1'}
+        self.data = {"search": "", "result": "", 'language': 'pl', 'level': 1, 'accuracy': True}
 
     def _ok(self):
         self.save()
-        result = rhymes(self.dicts[self.data['language']], self.data['search'], int(self.data['level']), self.data['language'])
-        self.data['result'] = ' '.join(result)
+        result = rhymes(self.dicts[self.data['language']], self.data['search'], int(self.data['level']), self.data['accurate'], self.data['language'])
+        self.data['result'] = ' '.join(result)[1:]
         self.data = self.data.copy()
+        self.llscreen.refresh()
         super(RhymesView, self).reset()
-
 
     @staticmethod
     def _quit():
         raise StopApplication("User pressed quit")
-
 
 def demo(screen, scene):
     dicts = {
