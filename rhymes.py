@@ -66,6 +66,8 @@ def is_sufix_equal(a, b, level, accurate):
                 if l0 == r_syl or l1 == r_syl:
                     is_equal[idx] = True
                     break
+            if is_equal[idx] == False:
+                return False
             idx += 1
 
         for i in range(level):

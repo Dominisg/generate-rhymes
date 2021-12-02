@@ -48,7 +48,7 @@ class RhymesView(Frame):
     def _ok(self):
         self.save()
         result = rhymes(self.dicts[self.data['language']], self.data['search'], int(self.data['level']), self.data['accurate'], self.data['language'])
-        self.data['result'] = ' '.join(result)[1:]
+        self.data['result'] = ' '.join(result)
         self.data = self.data.copy()
         self.llscreen.refresh()
         super(RhymesView, self).reset()
