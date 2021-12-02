@@ -2,13 +2,34 @@ import pyphen
 import re
 import pickle
 import os.path
+from wordfreq import word_frequency
+from functools import cmp_to_key
 # aspell -d en dump master | aspell -l en expand > en.dict 
+
+def freq_cmp(a, b, language):
+    return word_frequency(b, language, wordlist='large') - word_frequency(a, language, wordlist='large')
+
+def freq_cmp_en(a, b):
+    return freq_cmp(a, b, 'en')
+
+def freq_cmp_pl(a, b):
+    return freq_cmp(a, b, 'pl')
+
+def get_cmp(language):
+    if language == 'en':
+        return freq_cmp_en
+    elif language == 'pl':
+        return freq_cmp_pl
+    return None
 
 def read_dictionary(language):
     if language not in ["en", "pl"]:
         return []
     with open(language + ".dict") as f:
         data = re.split(" |\n", f.read())
+
+    data = list(set(data))
+    data = sorted(data, key=cmp_to_key(get_cmp(language)))
 
     dic = pyphen.Pyphen(lang=language)
     dict = []
@@ -32,7 +53,7 @@ def get_dictionary(language):
 
     return dict
 
-def is_sufix_equal(a, b, level, accurate):
+def does_sufix_rhyme(a, b, level, accurate):
     similar = [('b', 'p'),
                ('d', 't'),
                ('g', 'k'),
@@ -48,6 +69,9 @@ def is_sufix_equal(a, b, level, accurate):
                ('ć', 'ś')]
 
     if (len(a) < level and len(b) < level):
+        return False
+
+    if a == b:
         return False
 
     if accurate:
@@ -92,9 +116,9 @@ def rhymes(dict, word, level, accurate, language):
 
     dic = pyphen.Pyphen(lang=language)
     word = dic.inserted(word).split('-')
-    result = set()
+    result = []
     for w in dict:
-        if is_sufix_equal(w, word, level, accurate):
-            result.add("".join(w)) 
+        if does_sufix_rhyme(w, word, level, accurate):
+            result.append("".join(w)) 
     return result
 
