@@ -105,20 +105,27 @@ import nltk
 def rhyme_en_inaccurate(inp, level):
      entries = nltk.corpus.cmudict.entries()
      syllables = [(word, syl) for word, syl in entries if word == inp]
-     rhymes = []
-     for (word, syllable) in syllables:
-             rhymes += [word for word, pron in entries if pron[-level:] == syllable[-level:]]
-     return set(rhymes)
+     for (w, syllable) in syllables:
+        for word, pron in entries:
+            if(word == w):
+                continue
+            if pron[-level:] == syllable[-level:]:
+                yield word
 
-def rhymes(dict, word, level, accurate, language):
+def rhymes_generator(dict, word, level, accurate, language):
     if (language == 'en' and not accurate):
-        return rhyme_en_inaccurate(word, level)
+        for w in rhyme_en_inaccurate(word, level):
+            yield w
 
     dic = pyphen.Pyphen(lang=language)
     word = dic.inserted(word).split('-')
-    result = []
     for w in dict:
         if does_sufix_rhyme(w, word, level, accurate):
-            result.append("".join(w)) 
-    return result
+            yield "".join(w)
 
+def rhymes(dict, word, level, accurate, language):
+    result = []
+    for rhyme in rhymes_generator(dict, word, level, accurate, language):
+        result.append(rhyme)
+    return result
+    
