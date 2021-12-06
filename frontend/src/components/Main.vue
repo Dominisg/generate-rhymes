@@ -2,7 +2,6 @@
   <v-contaier fill-height fluid>
     <v-snackbar v-model="snackbar" :multi-line="multiLine" top color="red">
       {{ text }}
-
       <template v-slot:action="{ attrs }">
         <v-btn text v-bind="attrs" @click="snackbar = false"> Close </v-btn>
       </template>
@@ -11,34 +10,38 @@
       <v-col cols="6">
         <v-row>
           <v-card width="100%">
-            <v-card-text>
-              <v-row>
-                <v-select
-                  :items="languages"
-                  label="Language"
-                  outlined
-                  class="ma-5"
-                  v-model="selectedLanguage"
-                ></v-select>
-                <v-text-field
-                  label="Word"
-                  hide-details="auto"
-                  outlined
-                  class="ma-5"
-                  v-model="enteredWord"
-                ></v-text-field>
-                <v-select
-                  :items="levels"
-                  label="Level"
-                  outlined
-                  class="ma-5"
-                  v-model="selectedLevel"
-                ></v-select>
-              </v-row>
-              <v-row align="center" justify="center" class="mb-3">
-                <v-btn color="green" @click="generateRhymes"> Go!</v-btn>
-              </v-row>
-            </v-card-text>
+            <v-form @submit.prevent="generateRhymes">
+              <v-card-text>
+                <v-row>
+                  <v-select
+                    :items="languages"
+                    label="Language"
+                    outlined
+                    class="ma-5"
+                    v-model="selectedLanguage"
+                  ></v-select>
+                  <v-text-field
+                    label="Word"
+                    hide-details="auto"
+                    outlined
+                    class="ma-5"
+                    v-model="enteredWord"
+                  ></v-text-field>
+                  <v-select
+                    :items="levels"
+                    label="Level"
+                    outlined
+                    class="ma-5"
+                    v-model="selectedLevel"
+                  ></v-select>
+                </v-row>
+              </v-card-text>
+              <v-card-actions>
+                <v-row align="center" justify="center" class="mb-3">
+                  <v-btn type="submit" color="green"> Go!</v-btn>
+                </v-row>
+              </v-card-actions>
+            </v-form>
           </v-card>
         </v-row>
         <v-row class="mt-10">
@@ -94,7 +97,7 @@ export default {
         this.selectedLevel,
         this.enteredWord
       );
-      console.log(res);
+      console.log(res.data);
     },
   },
 };
