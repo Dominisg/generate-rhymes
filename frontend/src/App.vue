@@ -1,27 +1,20 @@
 <template>
   <v-app id="app">
-    <v-app-bar app color="primary" dark>
-      <div class="d-flex align-center">
+    <v-app-bar app color="#6e55c6" dark>
+      <v-row>
+        <v-spacer></v-spacer>
         <v-img
           alt="Vuetify Logo"
-          class="shrink mr-2"
           contain
-          src="https://cdn.vuetifyjs.com/images/logos/vuetify-logo-dark.png"
+          src="https://www.freepnglogos.com/uploads/music-folder-anything-music-logo-png-2.png"
           transition="scale-transition"
           width="40"
+          max-height="80"
+          max-width="100"
         />
-
-        <v-img
-          alt="Vuetify Name"
-          class="shrink mt-1 hidden-sm-and-down"
-          contain
-          min-width="100"
-          src="https://cdn.vuetifyjs.com/images/logos/vuetify-name-dark.png"
-          width="100"
-        />
-      </div>
-
-      <v-spacer></v-spacer>
+        <div class="mt-3"><h1 id="top_text">Rhymes Generator!</h1></div>
+        <v-spacer></v-spacer>
+      </v-row>
     </v-app-bar>
 
     <v-main>
@@ -49,5 +42,10 @@ export default {
 <style>
 #app {
   background-color: var(--v-background-base);
+}
+#top_text {
+  font-family: "Verdana";
+  color: transparent;
+  text-shadow: 0 0 2px #ffffff;
 }
 </style>
