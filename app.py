@@ -25,8 +25,9 @@ def disp(language, level, word):
 
     def generate():
         for rhyme in rhymes_generator(dicts[language], word, level, accurate, language):
-            yield f"{''.join(rhyme)}\n"
-    return app.response_class(generate(), mimetype='text' )
+            yield '{"word":"'  + ''.join(rhyme) + '"}\n'
+             
+    return app.response_class(generate())
   
   
 if __name__ == '__main__':
