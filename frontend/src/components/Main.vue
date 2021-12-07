@@ -62,7 +62,6 @@
 <script>
 import { getRhymes } from "@/services/api";
 import Loader from "./Loader.vue";
-import encoding from "text-encoding";
 export default {
   name: "Main",
   components: {
@@ -79,6 +78,7 @@ export default {
     text: `Word field cannot be empty!`,
     loader: false,
     wordsVisible: false,
+    rhymes: [],
   }),
 
   methods: {
@@ -103,25 +103,11 @@ export default {
         this.selectedLevel,
         this.enteredWord
       );
-      const result = res.body
-        .pipeThrough(new encoding.TextDecoderStream())
-        .pipeThrough(encoding.splitStream("\n"))
-        .pipeThrough(encoding.parseJSON());
-      await this.showResults(result.getReader());
+      this.rhymes = res.data.split("\n");
+      await this.showResults();
     },
-    async showResults(reader) {
-      reader.read().then(
-        ({ value, done }) => {
-          if (done) {
-            console.log("The stream was already closed!");
-          } else {
-            console.log(value.word);
-            this.showResults(reader);
-          }
-        },
-        (e) =>
-          console.error("The stream became errored and cannot be read from!", e)
-      );
+    async showResults() {
+      console.log(this.rhymes);
     },
   },
 };
