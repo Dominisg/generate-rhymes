@@ -31,7 +31,7 @@ def disp(language, level, word):
                                       language):
             yield '{"word":"' + ''.join(rhyme) + '"}\n'
 
-    return app.response_class(generate())
+    return app.response_class(generate(), mimetype="application/stream+json")
 
 
 if __name__ == '__main__':
