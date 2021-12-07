@@ -28,11 +28,12 @@ import Main from "./components/Main";
 
 export default {
   name: "App",
-
+  created() {
+    document.title = "Rhymes Generator!";
+  },
   components: {
     Main,
   },
-
   data: () => ({
     //
   }),

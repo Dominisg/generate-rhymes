@@ -44,12 +44,14 @@
             </v-form>
           </v-card>
         </v-row>
-        <v-row class="mt-10">
-          <v-card width="100%">
+        <v-row class="mt-10" align="center" justify="center">
+          <Loader v-if="loader" />
+          <v-card width="100%" v-if="wordsVisible">
             <v-card-text>
-              <v-row> </v-row>
+              <v-row align="center" justify="center"> </v-row>
             </v-card-text>
           </v-card>
+          <div v-else></div>
         </v-row>
       </v-col>
     </v-row>
@@ -59,11 +61,13 @@
 
 <script>
 import { getRhymes } from "@/services/api";
+import Loader from "./Loader.vue";
+import encoding from "text-encoding";
 export default {
   name: "Main",
-
-  components: {},
-
+  components: {
+    Loader,
+  },
   data: () => ({
     languages: ["English", "Polish"],
     levels: [1, 2, 3, 4],
@@ -73,6 +77,8 @@ export default {
     multiLine: true,
     snackbar: false,
     text: `Word field cannot be empty!`,
+    loader: false,
+    wordsVisible: false,
   }),
 
   methods: {
@@ -92,12 +98,30 @@ export default {
         default:
           break;
       }
-      var res = await getRhymes(
+      const res = await getRhymes(
         shortLang,
         this.selectedLevel,
         this.enteredWord
       );
-      console.log(res.data);
+      const result = res.body
+        .pipeThrough(new encoding.TextDecoderStream())
+        .pipeThrough(encoding.splitStream("\n"))
+        .pipeThrough(encoding.parseJSON());
+      await this.showResults(result.getReader());
+    },
+    async showResults(reader) {
+      reader.read().then(
+        ({ value, done }) => {
+          if (done) {
+            console.log("The stream was already closed!");
+          } else {
+            console.log(value.word);
+            this.showResults(reader);
+          }
+        },
+        (e) =>
+          console.error("The stream became errored and cannot be read from!", e)
+      );
     },
   },
 };
