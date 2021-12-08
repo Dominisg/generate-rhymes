@@ -38,20 +38,29 @@
               </v-card-text>
               <v-card-actions>
                 <v-row align="center" justify="center" class="mb-3">
-                  <v-btn type="submit" color="green"> Go!</v-btn>
+                  <v-btn type="submit" color="green" :disabled="loader">
+                    Go!</v-btn
+                  >
                 </v-row>
               </v-card-actions>
             </v-form>
           </v-card>
         </v-row>
         <v-row class="mt-10" align="center" justify="center">
-          <Loader v-if="loader" />
-          <v-card width="100%" v-if="wordsVisible">
-            <v-card-text>
-              <v-row align="center" justify="center"> </v-row>
-            </v-card-text>
-          </v-card>
-          <div v-else></div>
+          <transition name="fade-out-in" mode="out-in">
+            <div width="100%" v-if="wordsVisible">
+              <v-row align="center" justify="center">
+                <v-chip
+                  class="ma-3"
+                  color="#1b4d89"
+                  v-for="rhyme in rhymes"
+                  :key="rhyme"
+                  ><h2 style="color: white">{{ rhyme.word }}</h2></v-chip
+                >
+              </v-row>
+            </div>
+            <Loader v-if="loader" />
+          </transition>
         </v-row>
       </v-col>
     </v-row>
@@ -78,12 +87,16 @@ export default {
     snackbar: false,
     text: `Word field cannot be empty!`,
     loader: false,
-    wordsVisible: false,
+    wordsVisible: true,
     rhymes: [],
+    currentReader: 0,
   }),
 
   methods: {
     async generateRhymes() {
+      this.rhymes = [];
+      this.wordsVisible = false;
+      this.loader = true;
       if (this.enteredWord === "") {
         this.snackbar = true;
         return;
@@ -105,18 +118,35 @@ export default {
         this.selectedLevel,
         this.enteredWord
       );
-
-      const exampleReader = ndjsonStream(response.body).getReader();
+      this.currentReader = ndjsonStream(response.body).getReader();
 
       let result;
       while (!result || !result.done) {
-        result = await exampleReader.read();
-        console.log(result.done, result.value); //result.value is one line of your NDJSON data
+        result = await this.currentReader.read();
+        if (!result.done) {
+          this.rhymes.push(result.value);
+        }
       }
+      this.wordsVisible = true;
+      this.loader = false;
     },
   },
 };
 </script>
 
-<style>
+<style scoped>
+.fade-out-in-enter-active {
+  transition: opacity 0.1s;
+}
+.fade-out-in-leave-active {
+  transition: opacity 0.1s;
+}
+.fade-out-in-enter-active {
+  transition-delay: 0.1s;
+}
+
+.fade-out-in-enter,
+.fade-out-in-leave-to {
+  opacity: 0;
+}
 </style>
