@@ -62,6 +62,7 @@
 <script>
 import { getRhymes } from "@/services/api";
 import Loader from "./Loader.vue";
+import ndjsonStream from "can-ndjson-stream";
 export default {
   name: "Main",
   components: {
@@ -98,16 +99,20 @@ export default {
         default:
           break;
       }
-      const res = await getRhymes(
+
+      const response = await getRhymes(
         shortLang,
         this.selectedLevel,
         this.enteredWord
       );
-      this.rhymes = res.data.split("\n");
-      await this.showResults();
-    },
-    async showResults() {
-      console.log(this.rhymes);
+
+      const exampleReader = ndjsonStream(response.body).getReader();
+
+      let result;
+      while (!result || !result.done) {
+        result = await exampleReader.read();
+        console.log(result.done, result.value); //result.value is one line of your NDJSON data
+      }
     },
   },
 };

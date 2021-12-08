@@ -9,7 +9,10 @@
   },
   "dependencies": {
     "axios": "^0.24.0",
+    "can-ndjson-stream": "^1.0.2",
     "core-js": "^3.6.5",
+    "n": "^8.0.1",
+    "node": "^17.2.0",
     "text-encoding": "^0.7.0",
     "vue": "^2.6.11",
     "vuetify": "^2.4.0"
