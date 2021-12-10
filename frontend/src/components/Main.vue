@@ -47,7 +47,7 @@
                   <v-btn
                     type="submit"
                     color="green"
-                    :disabled="loader"
+                    :loading="loadingGoButton"
                     class="mr-3"
                   >
                     Go!</v-btn
@@ -55,6 +55,7 @@
                   <v-btn
                     color="green"
                     :disabled="loader || !showMore"
+                    :loading="loadingShowMoreButton"
                     @click="showMoreRhymes"
                   >
                     Show More</v-btn
@@ -72,13 +73,15 @@
               width="100%"
               v-if="wordsVisible"
             >
-              <v-chip
-                class="ma-3"
-                color="#1b4d89"
-                v-for="rhyme in rhymes"
-                :key="rhyme"
-                ><h2 style="color: white">{{ rhyme.word }}</h2></v-chip
-              >
+              <transition-group name="list" tag="p">
+                <v-chip
+                  class="ma-3"
+                  color="#1b4d89"
+                  v-for="rhyme in rhymes"
+                  :key="rhyme"
+                  ><h2 style="color: white">{{ rhyme.word }}</h2></v-chip
+                >
+              </transition-group>
             </v-row>
             <Loader v-if="loader" />
             <v-row
@@ -125,6 +128,8 @@ export default {
     currentWordsNumber: 0,
     showMore: false,
     noResults: false,
+    loadingGoButton: false,
+    loadingShowMoreButton: false,
   }),
 
   methods: {
@@ -138,6 +143,7 @@ export default {
       }
       this.wordsVisible = false;
       this.loader = true;
+      this.loadingGoButton = true;
       var shortLang;
       switch (this.selectedLanguage) {
         case "English":
@@ -163,6 +169,8 @@ export default {
         result = await this.currentReader.read();
         if (!result.done) {
           this.rhymes.push(result.value);
+          this.loader = false;
+          this.wordsVisible = true;
           this.currentWordsNumber++;
         } else {
           this.showMore = false;
@@ -177,6 +185,7 @@ export default {
       } else {
         this.wordsVisible = true;
       }
+      this.loadingGoButton = false;
       this.loader = false;
     },
     async showMoreRhymes() {
@@ -184,11 +193,14 @@ export default {
       this.rhymes = [];
       this.wordsVisible = false;
       this.loader = true;
+      this.loadingShowMoreButton = true;
       let result;
       while (!result || !result.done) {
         result = await this.currentReader.read();
         if (!result.done) {
           this.rhymes.push(result.value);
+          this.loader = false;
+          this.wordsVisible = true;
           this.currentWordsNumber++;
         } else {
           this.showMore = false;
@@ -199,6 +211,7 @@ export default {
         }
       }
       this.wordsVisible = true;
+      this.loadingShowMoreButton = false;
       this.loader = false;
     },
   },
@@ -219,5 +232,17 @@ export default {
 .fade-out-in-enter,
 .fade-out-in-leave-to {
   opacity: 0;
+}
+.list-item {
+  display: inline-block;
+  margin-right: 10px;
+}
+.list-enter-active,
+.list-leave-active {
+  transition: all 1s;
+}
+.list-enter, .list-leave-to /* .list-leave-active below version 2.1.8 */ {
+  opacity: 0;
+  transform: translateY(30px);
 }
 </style>
