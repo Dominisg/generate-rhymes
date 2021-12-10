@@ -49,6 +49,7 @@
                     color="green"
                     :loading="loadingGoButton"
                     class="mr-3"
+                    :disabled="loadingShowMoreButton"
                   >
                     Go!</v-btn
                   >
