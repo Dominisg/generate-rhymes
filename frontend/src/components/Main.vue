@@ -34,24 +34,64 @@
                     class="ma-5"
                     v-model="selectedLevel"
                   ></v-select>
+                  <v-checkbox
+                    class="ma-3 mt-12"
+                    v-model="inacuurate"
+                    label="Inaccurate"
+                  >
+                  </v-checkbox>
                 </v-row>
               </v-card-text>
               <v-card-actions>
                 <v-row align="center" justify="center" class="mb-3">
-                  <v-btn type="submit" color="green"> Go!</v-btn>
+                  <v-btn
+                    type="submit"
+                    color="green"
+                    :disabled="loader"
+                    class="mr-3"
+                  >
+                    Go!</v-btn
+                  >
+                  <v-btn
+                    color="green"
+                    :disabled="loader || !showMore"
+                    @click="showMoreRhymes"
+                  >
+                    Show More</v-btn
+                  >
                 </v-row>
               </v-card-actions>
             </v-form>
           </v-card>
         </v-row>
         <v-row class="mt-10" align="center" justify="center">
-          <Loader v-if="loader" />
-          <v-card width="100%" v-if="wordsVisible">
-            <v-card-text>
-              <v-row align="center" justify="center"> </v-row>
-            </v-card-text>
-          </v-card>
-          <div v-else></div>
+          <transition name="fade-out-in" mode="out-in">
+            <v-row
+              align="center"
+              justify="center"
+              width="100%"
+              v-if="wordsVisible"
+            >
+              <v-chip
+                class="ma-3"
+                color="#1b4d89"
+                v-for="rhyme in rhymes"
+                :key="rhyme"
+                ><h2 style="color: white">{{ rhyme.word }}</h2></v-chip
+              >
+            </v-row>
+            <Loader v-if="loader" />
+            <v-row
+              align="center"
+              justify="center"
+              width="100%"
+              v-if="noResults"
+            >
+              <h4 style="color: #7c809b; font-style: italic">
+                No rhymes could be found. Try a different word
+              </h4>
+            </v-row>
+          </transition>
         </v-row>
       </v-col>
     </v-row>
@@ -62,6 +102,7 @@
 <script>
 import { getRhymes } from "@/services/api";
 import Loader from "./Loader.vue";
+import ndjsonStream from "can-ndjson-stream";
 export default {
   name: "Main",
   components: {
@@ -79,14 +120,24 @@ export default {
     loader: false,
     wordsVisible: false,
     rhymes: [],
+    currentReader: 0,
+    inacuurate: false,
+    currentWordsNumber: 0,
+    showMore: false,
+    noResults: false,
   }),
 
   methods: {
     async generateRhymes() {
+      this.rhymes = [];
+      this.noResults = false;
+      this.currentWordsNumber = 0;
       if (this.enteredWord === "") {
         this.snackbar = true;
         return;
       }
+      this.wordsVisible = false;
+      this.loader = true;
       var shortLang;
       switch (this.selectedLanguage) {
         case "English":
@@ -98,20 +149,75 @@ export default {
         default:
           break;
       }
-      const res = await getRhymes(
+
+      const response = await getRhymes(
         shortLang,
         this.selectedLevel,
-        this.enteredWord
+        this.enteredWord,
+        this.inacuurate
       );
-      this.rhymes = res.data.split("\n");
-      await this.showResults();
+      this.currentReader = ndjsonStream(response.body).getReader();
+
+      let result;
+      while (!result || !result.done) {
+        result = await this.currentReader.read();
+        if (!result.done) {
+          this.rhymes.push(result.value);
+          this.currentWordsNumber++;
+        } else {
+          this.showMore = false;
+        }
+        if (this.currentWordsNumber >= 70) {
+          this.showMore = true;
+          break;
+        }
+      }
+      if (this.currentWordsNumber === 0) {
+        this.noResults = true;
+      } else {
+        this.wordsVisible = true;
+      }
+      this.loader = false;
     },
-    async showResults() {
-      console.log(this.rhymes);
+    async showMoreRhymes() {
+      this.currentWordsNumber = 0;
+      this.rhymes = [];
+      this.wordsVisible = false;
+      this.loader = true;
+      let result;
+      while (!result || !result.done) {
+        result = await this.currentReader.read();
+        if (!result.done) {
+          this.rhymes.push(result.value);
+          this.currentWordsNumber++;
+        } else {
+          this.showMore = false;
+        }
+        if (this.currentWordsNumber >= 70) {
+          this.showMore = true;
+          break;
+        }
+      }
+      this.wordsVisible = true;
+      this.loader = false;
     },
   },
 };
 </script>
 
-<style>
+<style scoped>
+.fade-out-in-enter-active {
+  transition: opacity 0.1s;
+}
+.fade-out-in-leave-active {
+  transition: opacity 0.1s;
+}
+.fade-out-in-enter-active {
+  transition-delay: 0.1s;
+}
+
+.fade-out-in-enter,
+.fade-out-in-leave-to {
+  opacity: 0;
+}
 </style>
