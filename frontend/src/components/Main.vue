@@ -134,6 +134,7 @@ export default {
 
   methods: {
     async generateRhymes() {
+      this.showMore = false;
       this.rhymes = [];
       this.noResults = false;
       this.currentWordsNumber = 0;
