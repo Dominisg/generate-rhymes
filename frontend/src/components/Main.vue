@@ -80,7 +80,9 @@
                   color="#1b4d89"
                   v-for="rhyme in rhymes"
                   :key="rhyme"
-                  ><h2 style="color: white">{{ rhyme.word }}</h2></v-chip
+                  ><a :href="rhyme.url" target="_blank">
+                    <h2 style="color: white">{{ rhyme.word }}</h2>
+                   </a></v-chip
                 >
               </transition-group>
             </v-row>
@@ -150,9 +152,11 @@ export default {
       switch (this.selectedLanguage) {
         case "English":
           shortLang = "en";
+          this.definitionUrl = "https://www.dictionary.com/browse/"
           break;
         case "Polish":
           shortLang = "pl";
+          this.definitionUrl = "https://www.sjp.pl/"
           break;
         default:
           break;
@@ -170,6 +174,7 @@ export default {
       while (!result || !result.done) {
         result = await this.currentReader.read();
         if (!result.done) {
+          result.value.url = this.definitionUrl + result.value.word;
           this.rhymes.push(result.value);
           this.loader = false;
           this.wordsVisible = true;
@@ -200,6 +205,7 @@ export default {
       while (!result || !result.done) {
         result = await this.currentReader.read();
         if (!result.done) {
+          result.value.url = this.definitionUrl + result.value.word;
           this.rhymes.push(result.value);
           this.loader = false;
           this.wordsVisible = true;
@@ -247,4 +253,9 @@ export default {
   opacity: 0;
   transform: translateY(30px);
 }
+
+a {
+  text-decoration:none;
+}
+
 </style>
