@@ -4,6 +4,7 @@ import pickle
 import os.path
 from wordfreq import word_frequency
 from functools import cmp_to_key
+import sqlite3
 # aspell -d en dump master | aspell -l en expand > en.dict 
 
 def freq_cmp(a, b, language):
@@ -41,15 +42,30 @@ def dump_dictionary(dict, language):
     with open(language + '.pickle', 'wb') as file:
         pickle.dump(dict, file)
         file.close()
+
+def create_db(dict, language):
+    conn = sqlite3.connect(language + '.db')
+    conn.execute("CREATE TABLE words (word text)")
     
-def get_dictionary(language):
-    if (os.path.isfile(language + '.pickle')):
-        with open(language + '.pickle', 'rb') as file:
-            dict = pickle.load(file)
-            file.close()
+    for word in dict:
+        conn.execute("INSERT INTO {tn} VALUES(?)".format(tn="words"), ("-".join(word),))
+
+    conn.commit()
+    conn.close() 
+    
+def get_dictionary(language, sql = False):
+    dict = None
+    if sql:
+        if not os.path.isfile(language + '.db'):
+            create_db(read_dictionary(language), language)
     else:
-        dict = read_dictionary(language)
-        dump_dictionary(dict, language)
+        if (os.path.isfile(language + '.pickle')):
+            with open(language + '.pickle', 'rb') as file:
+                dict = pickle.load(file)
+                file.close()
+        else:
+            dict = read_dictionary(language)
+            dump_dictionary(dict, language)
 
     return dict
 
@@ -119,13 +135,25 @@ def rhymes_generator(dict, word, level, accurate, language):
 
     dic = pyphen.Pyphen(lang=language)
     word = dic.inserted(word).split('-')
-    for w in dict:
-        if does_sufix_rhyme(w, word, level, accurate):
-            yield "".join(w)
+    
+    if isinstance(dict, list):
+        for w in dict:
+            if does_sufix_rhyme(w, word, level, accurate):
+                yield "".join(w)
+    else:
+        conn = sqlite3.connect(language + '.db')
+        c = conn.cursor()
+        c.execute('SELECT * FROM words')
+        
+        for w in c:
+            w = w[0].split('-')
+            if does_sufix_rhyme(w, word, level, accurate):
+                yield "".join(w)
+        conn.close()
+            
 
 def rhymes(dict, word, level, accurate, language):
     result = []
     for rhyme in rhymes_generator(dict, word, level, accurate, language):
         result.append(rhyme)
     return result
-    
