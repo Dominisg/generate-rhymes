@@ -10,7 +10,6 @@ app = Flask(__name__)
 CORS(app)
 dicts = {}
 
-
 @app.route('/', methods=['GET', 'POST'])
 def home():
     if (request.method == 'GET'):
@@ -36,7 +35,7 @@ def disp(language, level, word):
 
 if __name__ == '__main__':
 
-    dicts['en'] = get_dictionary('en')
-    dicts['pl'] = get_dictionary('pl')
+    dicts['en'] = get_dictionary('en', True)
+    dicts['pl'] = get_dictionary('pl', True)
 
     app.run(debug=True)
