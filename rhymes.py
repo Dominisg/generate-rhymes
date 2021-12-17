@@ -1,6 +1,7 @@
 import pyphen
 import re
 import pickle
+import nltk
 import os.path
 from wordfreq import word_frequency
 from functools import cmp_to_key
@@ -117,7 +118,19 @@ def does_sufix_rhyme(a, b, level, accurate):
 
     return False
 
-import nltk
+#nltk.download('averaged_perceptron_tagger')
+
+import morfeusz2
+from nltk.stem.snowball import SnowballStemmer
+def get_word_data(word, language):
+    if language == 'en':
+        stemmer = SnowballStemmer("english")
+        yield nltk.pos_tag([word])[0] + tuple([stemmer.stem(word)]) # czasem bylo "".join(w) - moze nie da sie zwrocic yieldem tupli?
+    elif language == 'pl':
+        morf = morfeusz2.Morfeusz()
+        (_, _, (_, base, tag, _, _)) = morf.analyse(word)[0]
+        yield (word, tag, base)
+
 def rhyme_en_inaccurate(inp, level):
      entries = nltk.corpus.cmudict.entries()
      syllables = [(word, syl) for word, syl in entries if word == inp]
@@ -129,17 +142,17 @@ def rhyme_en_inaccurate(inp, level):
                 yield word
 
 def rhymes_generator(dict, word, level, accurate, language):
+    stemmer = SnowballStemmer("english")
     if (language == 'en' and not accurate):
         for w in rhyme_en_inaccurate(word, level):
-            yield w
+            yield get_word_data(w, 'en')
 
     dic = pyphen.Pyphen(lang=language)
     word = dic.inserted(word).split('-')
-    
     if isinstance(dict, list):
         for w in dict:
             if does_sufix_rhyme(w, word, level, accurate):
-                yield "".join(w)
+                yield get_word_data(w, language)
     else:
         conn = sqlite3.connect(language + '.db')
         c = conn.cursor()
@@ -148,7 +161,7 @@ def rhymes_generator(dict, word, level, accurate, language):
         for w in c:
             w = w[0].split('-')
             if does_sufix_rhyme(w, word, level, accurate):
-                yield "".join(w)
+                yield get_word_data(w, language)
         conn.close()
             
 

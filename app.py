@@ -4,6 +4,8 @@ from flask import Flask, jsonify, request, abort
 from flask_cors import CORS
 
 from rhymes import rhymes_generator, get_dictionary
+import nltk
+nltk.download('averaged_perceptron_tagger')
 
 # creating a Flask app
 app = Flask(__name__)
@@ -26,9 +28,10 @@ def disp(language, level, word):
     accurate = request.args.get('inaccurate') is None
 
     def generate():
-        for rhyme in rhymes_generator(dicts[language], word, level, accurate,
+        for rhyme_data in rhymes_generator(dicts[language], word, level, accurate,
                                       language):
-            yield '{"word":"' + ''.join(rhyme) + '"}\n'
+            data = next(rhyme_data)
+            print ('{"word":"' + ''.join(data[0]) + '","partOfSpeech":"' + ''.join(data[1]) + '","stem":"' + ''.join(data[2]) + '"}\n')
 
     return app.response_class(generate(), mimetype="application/stream+json")
 
