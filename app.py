@@ -40,8 +40,8 @@ def disp(language, level, word):
 
 if __name__ == '__main__':
 
-    dicts['en'] = get_dictionary('en', True)
-    dicts['pl'] = get_dictionary('pl', True)
+    dicts['en'] = get_dictionary('en')
+    dicts['pl'] = get_dictionary('pl')
     nlp['en'] = spacy.load('en_core_web_md')
     nlp['pl'] = spacy.load('pl_core_news_md')
 
