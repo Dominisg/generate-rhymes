@@ -28,14 +28,14 @@ def disp(language, level, word):
     def generate():
         for rhyme in rhymes_generator(dicts[language], word, level, accurate,
                                       language):
-            yield '{"word":"' + ''.join(rhyme) + '"}\n'
+            yield '{"word":"' + ''.join(rhyme[0]) + '", "score":"' + str(rhyme[1]) + '"}\n'
 
     return app.response_class(generate(), mimetype="application/stream+json")
 
 
 if __name__ == '__main__':
 
-    dicts['en'] = get_dictionary('en')
-    dicts['pl'] = get_dictionary('pl')
+    dicts['en'] = get_dictionary('en', True)
+    dicts['pl'] = get_dictionary('pl', True)
 
     app.run(debug=True)

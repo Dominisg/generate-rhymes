@@ -1,3 +1,4 @@
+from logging import disable
 import pyphen
 import re
 import pickle
@@ -5,6 +6,9 @@ import os.path
 from wordfreq import word_frequency
 from functools import cmp_to_key
 import sqlite3
+import enchant
+import math
+
 # aspell -d en dump master | aspell -l en expand > en.dict 
 
 def freq_cmp(a, b, language):
@@ -27,8 +31,9 @@ def read_dictionary(language):
     if language not in ["en", "pl"]:
         return []
     with open(language + ".dict") as f:
-        data = re.split(" |\n", f.read())
+        data =  re.split(" |\n", f.read())
 
+    data = map(str.lower, data)
     data = list(set(data))
     data = sorted(data, key=cmp_to_key(get_cmp(language)))
 
@@ -128,10 +133,33 @@ def rhyme_en_inaccurate(inp, level):
             if pron[-level:] == syllable[-level:]:
                 yield word
 
+def score_rhyme(found, given, language, inaccurate = False):
+    length_sum = len(given) + len(found)
+    length_diff = len(given) - len(found)
+    distance = enchant.utils.levenshtein(given, found)
+    score = float(length_sum) / float(distance + length_sum + length_diff)
+
+    for i in range(min(len(found), len(given))):
+        if found[-i] == found[-i]: 
+            score += 0.1
+
+    if ((given in found) or (found in given)):
+        score -= 0.5
+
+    if inaccurate:
+        score -= 0.2
+
+    freq = math.log(min(max(1.e-08, word_frequency(found, language, wordlist="large")), 0.004))
+    normalized_freq = (freq - math.log(1.e-08)) / (math.log(0.004) - math.log(1.e-08))
+
+    score += normalized_freq * 0.4
+
+    return score
+
 def rhymes_generator(dict, word, level, accurate, language):
     if (language == 'en' and not accurate):
         for w in rhyme_en_inaccurate(word, level):
-            yield w
+            yield (w, score_rhyme(w, "".join(word), language, True))
 
     dic = pyphen.Pyphen(lang=language)
     word = dic.inserted(word).split('-')
@@ -139,7 +167,7 @@ def rhymes_generator(dict, word, level, accurate, language):
     if isinstance(dict, list):
         for w in dict:
             if does_sufix_rhyme(w, word, level, accurate):
-                yield "".join(w)
+                yield ("".join(w), score_rhyme("".join(w), "".join(word), language))
     else:
         conn = sqlite3.connect(language + '.db')
         c = conn.cursor()
@@ -148,7 +176,7 @@ def rhymes_generator(dict, word, level, accurate, language):
         for w in c:
             w = w[0].split('-')
             if does_sufix_rhyme(w, word, level, accurate):
-                yield "".join(w)
+                yield ("".join(w), score_rhyme("".join(w), "".join(word), language))
         conn.close()
             
 
