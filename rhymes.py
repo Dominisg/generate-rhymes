@@ -2,6 +2,7 @@ from logging import disable
 import pyphen
 import re
 import pickle
+import nltk
 import os.path
 from wordfreq import word_frequency
 from functools import cmp_to_key
@@ -122,13 +123,12 @@ def does_sufix_rhyme(a, b, level, accurate):
 
     return False
 
-import nltk
 def rhyme_en_inaccurate(inp, level):
      entries = nltk.corpus.cmudict.entries()
      syllables = [(word, syl) for word, syl in entries if word == inp]
      for (w, syllable) in syllables:
         for word, pron in entries:
-            if(word == w):
+            if (word == w):
                 continue
             if pron[-level:] == syllable[-level:]:
                 yield word
@@ -163,7 +163,6 @@ def rhymes_generator(dict, word, level, accurate, language):
 
     dic = pyphen.Pyphen(lang=language)
     word = dic.inserted(word).split('-')
-    
     if isinstance(dict, list):
         for w in dict:
             if does_sufix_rhyme(w, word, level, accurate):

@@ -36,8 +36,46 @@
                   ></v-select>
                   <v-checkbox
                     class="ma-3 mt-12"
-                    v-model="inacuurate"
+                    v-model="inaccurate"
                     label="Inaccurate"
+                  >
+                  </v-checkbox>
+                  </v-row>
+                    <v-row>
+                  <v-checkbox
+                    class="ma-3 mt-12"
+                    v-model="verbChoice"
+                    label="Verb"
+                  >
+                  </v-checkbox>
+                  <v-checkbox
+                    class="ma-3 mt-12"
+                    v-model="adjChoice"
+                    label="Adjective"
+                  >
+                  </v-checkbox>
+                  <v-checkbox
+                    class="ma-3 mt-12"
+                    v-model="nounChoice"
+                    label="Noun"
+                  >
+                  </v-checkbox>
+                  <v-checkbox
+                    class="ma-3 mt-12"
+                    v-model="propnChoice"
+                    label="Proper noun"
+                  >
+                  </v-checkbox>
+                  <v-checkbox
+                    class="ma-3 mt-12"
+                    v-model="advChoice"
+                    label="Adverb"
+                  >
+                  </v-checkbox>
+                  <v-checkbox
+                    class="ma-3 mt-12"
+                    v-model="otherChoice"
+                    label="Other"
                   >
                   </v-checkbox>
                 </v-row>
@@ -78,10 +116,11 @@
                 <v-chip
                   class="ma-3"
                   color="#1b4d89"
-                  v-for="rhyme in rhymes"
+                  v-for="rhyme in rhymesCorrectPartsOfSpeech"
                   :key="rhyme"
                   ><a :href="rhyme.url" target="_blank">
-                    <h2 style="color: white">{{ rhyme.word }}</h2>
+                    <h3 style="color: white; line-height: 1.2em">{{ rhyme.word }}</h3>
+                    <h5 style="color: pink; line-height: 0.8em">{{ rhyme.partOfSpeech }}</h5>
                    </a></v-chip
                 >
               </transition-group>
@@ -127,14 +166,45 @@ export default {
     wordsVisible: false,
     rhymes: [],
     currentReader: 0,
-    inacuurate: false,
+    inaccurate: false,
+    adjChoice: true,
+    nounChoice: true,
+    verbChoice: true,
+    advChoice: true,
+    propnChoice: true,
+    otherChoice: true,
     currentWordsNumber: 0,
     showMore: false,
     noResults: false,
     loadingGoButton: false,
     loadingShowMoreButton: false,
   }),
+  computed: {
+    testValue: 10,
+     rhymesCorrectPartsOfSpeech: function() {
+      let allowedTypes = [];
+      if (this.adjChoice) allowedTypes.push('ADJ');
+      if (this.nounChoice) allowedTypes.push('NOUN');
+      if (this.verbChoice) allowedTypes.push('VERB');
+      if (this.advChoice) allowedTypes.push('ADV');
+      if (this.propnChoice) allowedTypes.push('PROPN');
+      if (this.otherChoice) allowedTypes.push('other');
 
+      function filterPartsOfSpeech(r) {
+        if (this.includes('other'))
+        {
+          let choosableTypes = ['ADJ', 'NOUN', 'VERB', 'ADV', 'PROPN'];
+          if (!(choosableTypes.includes(r.partOfSpeech)))
+          {
+            return true;
+          }
+        }
+        return this.includes(r.partOfSpeech);
+      }
+
+      return this.rhymes.filter(filterPartsOfSpeech, allowedTypes);
+     }
+   },
   methods: {
     async generateRhymes() {
       this.showMore = false;
@@ -166,7 +236,13 @@ export default {
         shortLang,
         this.selectedLevel,
         this.enteredWord,
-        this.inacuurate
+        this.inaccurate,
+        this.adjChoice,
+        this.nounChoice,
+        this.verbChoice,
+        this.advChoice,
+        this.propnChoice,
+        this.otherChoice
       );
       this.currentReader = ndjsonStream(response.body).getReader();
 
