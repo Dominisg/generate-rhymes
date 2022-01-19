@@ -202,7 +202,7 @@ export default {
         return this.includes(r.partOfSpeech);
       }
 
-      return this.rhymes.filter(filterPartsOfSpeech, allowedTypes);
+      return this.rhymes.filter(filterPartsOfSpeech, allowedTypes).sort(function(a,b) {return b.score - a.score;});
      }
    },
   methods: {
@@ -252,7 +252,6 @@ export default {
         if (!result.done) {
           result.value.url = this.definitionUrl + result.value.word;
           this.rhymes.push(result.value);
-          this.rhymes.sort(function(a,b) {return b.score - a.score;}); 
           this.loader = false;
           this.wordsVisible = true;
           this.currentWordsNumber++;
@@ -284,7 +283,6 @@ export default {
         if (!result.done) {
           result.value.url = this.definitionUrl + result.value.word;
           this.rhymes.push(result.value);
-          this.rhymes.sort(function(a,b) {return a.score - b.score;}); 
           this.loader = false;
           this.wordsVisible = true;
           this.currentWordsNumber++;

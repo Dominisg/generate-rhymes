@@ -4,11 +4,11 @@ import re
 import pickle
 import nltk
 import os.path
+import sqlite3
+import math
+import spacy
 from wordfreq import word_frequency
 from functools import cmp_to_key
-import sqlite3
-import enchant
-import math
 
 # aspell -d en dump master | aspell -l en expand > en.dict 
 
@@ -51,10 +51,20 @@ def dump_dictionary(dict, language):
 
 def create_db(dict, language):
     conn = sqlite3.connect(language + '.db')
-    conn.execute("CREATE TABLE words (word text)")
+    conn.execute("CREATE TABLE words (word text, part_of_speech text)")
     
+    if language == 'en':
+        tagger = spacy.load('en_core_web_lg')
+    else:
+        tagger = spacy.load('pl_core_news_lg')
+
     for word in dict:
-        conn.execute("INSERT INTO {tn} VALUES(?)".format(tn="words"), ("-".join(word),))
+        sp = tagger("".join(word))
+        if len(sp) == 0:
+            pos = ""
+        else:
+            pos = sp[0].pos_
+        conn.execute("INSERT INTO {tn} VALUES(?,?)".format(tn="words"), ("-".join(word), pos))
 
     conn.commit()
     conn.close() 
@@ -133,49 +143,56 @@ def rhyme_en_inaccurate(inp, level):
             if pron[-level:] == syllable[-level:]:
                 yield word
 
-def score_rhyme(found, given, language, inaccurate = False):
-    length_sum = len(given) + len(found)
-    length_diff = len(given) - len(found)
-    distance = enchant.utils.levenshtein(given, found)
-    score = float(length_sum) / float(distance + length_sum + length_diff)
+def score_rhyme(found, given, language):
+    score = 0.4
+
+    dic = pyphen.Pyphen(lang=language)
+    sylablles_distance = abs(len(dic.inserted(found).split('-')) - len(dic.inserted(given).split('-')))
+    score -= sylablles_distance * 0.05
 
     for i in range(min(len(found), len(given))):
-        if found[-i] == found[-i]: 
-            score += 0.1
+        if found[-i] == given[-i]: 
+            score += 0.06
+        else:
+            break
+
+    for i in range(min(len(found), len(given))):
+        if found[-i] == given[-i]: 
+            score += 0.05
 
     if ((given in found) or (found in given)):
         score -= 0.5
 
-    if inaccurate:
-        score -= 0.2
-
     freq = math.log(min(max(1.e-08, word_frequency(found, language, wordlist="large")), 0.004))
     normalized_freq = (freq - math.log(1.e-08)) / (math.log(0.004) - math.log(1.e-08))
-
-    score += normalized_freq * 0.4
-
+    
+    score += normalized_freq * 0.1
     return score
 
 def rhymes_generator(dict, word, level, accurate, language):
     if (language == 'en' and not accurate):
         for w in rhyme_en_inaccurate(word, level):
-            yield (w, score_rhyme(w, "".join(word), language, True))
+            pos = nltk.pos_tag([w], tagset='universal')[0][1]
+            yield {"word": w, "score": score_rhyme(w, "".join(word), language), "partOfSpeech": pos}
 
     dic = pyphen.Pyphen(lang=language)
     word = dic.inserted(word).split('-')
     if isinstance(dict, list):
         for w in dict:
             if does_sufix_rhyme(w, word, level, accurate):
-                yield ("".join(w), score_rhyme("".join(w), "".join(word), language))
+                yield {"word": "".join(w), "score": score_rhyme("".join(w), "".join(word), language)}
     else:
         conn = sqlite3.connect(language + '.db')
         c = conn.cursor()
         c.execute('SELECT * FROM words')
         
         for w in c:
+            pos = ""
+            if len(w) > 1:
+                pos = w[1]
             w = w[0].split('-')
             if does_sufix_rhyme(w, word, level, accurate):
-                yield ("".join(w), score_rhyme("".join(w), "".join(word), language))
+                yield {"word": "".join(w), "score": score_rhyme("".join(w), "".join(word), language), "partOfSpeech": pos}
         conn.close()
             
 

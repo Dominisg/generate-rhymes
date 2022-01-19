@@ -4,15 +4,11 @@ from flask import Flask, jsonify, request, abort
 from flask_cors import CORS
 
 from rhymes import rhymes_generator, get_dictionary
-#import nltk
-#nltk.download('averaged_perceptron_tagger')
-import spacy
 
 # creating a Flask app
 app = Flask(__name__)
 CORS(app)
 dicts = {}
-nlp = {}
 
 @app.route('/', methods=['GET', 'POST'])
 def home():
@@ -28,12 +24,11 @@ def disp(language, level, word):
         abort(404)
 
     accurate = request.args.get('inaccurate') is None
-
     def generate():
         for rhyme in rhymes_generator(dicts[language], word, level, accurate,
                                       language):
-            sp = nlp[language](''.join(rhyme[0]))
-            yield '{"word":"' + ''.join(rhyme[0])+ '", "score":"' + str(rhyme[1])  + '","partOfSpeech":"' + sp[0].pos_ + '","lemma":"' + sp[0].lemma_ + '"}\n'
+
+            yield rhyme.__str__().replace('\'', '"') + '\n'
 
     return app.response_class(generate(), mimetype="application/stream+json")
 
@@ -41,8 +36,6 @@ def disp(language, level, word):
 if __name__ == '__main__':
 
     dicts['en'] = get_dictionary('en', True)
-    dicts['pl'] = get_dictionary('pl')
-    nlp['en'] = spacy.load('en_core_web_md')
-    nlp['pl'] = spacy.load('pl_core_news_md')
+    dicts['pl'] = get_dictionary('pl', True)
 
     app.run(debug=True)
